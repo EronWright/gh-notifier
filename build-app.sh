@@ -3,8 +3,10 @@
 # `.app` bundle so macOS Notification Center will accept banners from it.
 #
 # Usage:
-#   ./build-app.sh              # builds GH\ Notifier.app/ in the repo root
-#   ./build-app.sh --install    # also copies it to /Applications
+#   ./build-app.sh                          # host-arch only (fast dev loop)
+#   ./build-app.sh --install                # copy to /Applications
+#   ./build-app.sh --universal              # arm64 + x86_64 fat binary
+#   ./build-app.sh --universal --install    # combine
 
 set -euo pipefail
 
@@ -14,21 +16,48 @@ APP_NAME="GH Notifier"
 BUNDLE_DIR="${APP_NAME}.app"
 EXEC_NAME="GHNotifier"
 
-echo "==> swift build -c release"
-swift build -c release
+# ---------- parse flags ----------
+INSTALL=false
+UNIVERSAL=false
+for arg in "$@"; do
+    case "$arg" in
+        --install)   INSTALL=true ;;
+        --universal) UNIVERSAL=true ;;
+        -h|--help)
+            sed -n '2,8p' "$0"; exit 0 ;;
+        *)
+            echo "Unknown argument: $arg" >&2
+            exit 1 ;;
+    esac
+done
 
-BIN_PATH="$(swift build -c release --show-bin-path)/${EXEC_NAME}"
+# ---------- swift build ----------
+BUILD_ARGS=(build -c release)
+if $UNIVERSAL; then
+    BUILD_ARGS+=(--arch arm64 --arch x86_64)
+fi
+
+echo "==> swift ${BUILD_ARGS[*]}"
+swift "${BUILD_ARGS[@]}"
+
+BIN_PATH="$(swift "${BUILD_ARGS[@]}" --show-bin-path)/${EXEC_NAME}"
 if [[ ! -x "${BIN_PATH}" ]]; then
     echo "Built binary not found at ${BIN_PATH}" >&2
     exit 1
 fi
 
+# ---------- assemble bundle ----------
 echo "==> Assembling ${BUNDLE_DIR}"
 rm -rf "${BUNDLE_DIR}"
 mkdir -p "${BUNDLE_DIR}/Contents/MacOS"
 mkdir -p "${BUNDLE_DIR}/Contents/Resources"
 cp "${BIN_PATH}"            "${BUNDLE_DIR}/Contents/MacOS/${EXEC_NAME}"
 cp "Resources/Info.plist"   "${BUNDLE_DIR}/Contents/Info.plist"
+
+if $UNIVERSAL; then
+    echo "==> Bundle slices:"
+    lipo -archs "${BUNDLE_DIR}/Contents/MacOS/${EXEC_NAME}" | sed 's/^/    /'
+fi
 
 # Ad-hoc sign so notifications and login-item entitlements work locally.
 # (No paid developer ID required for personal use.)
@@ -41,7 +70,7 @@ echo
 echo "Built ${BUNDLE_DIR}"
 echo
 
-if [[ "${1:-}" == "--install" ]]; then
+if $INSTALL; then
     DEST="/Applications/${BUNDLE_DIR}"
     echo "==> Installing to ${DEST}"
     rm -rf "${DEST}"

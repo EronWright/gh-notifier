@@ -139,6 +139,26 @@
             "command": "open",
             "args": ["x-apple.systempreferences:com.apple.preference.notifications"],
             "problemMatcher": []
+        },
+        {
+            "label": "release: cut new release",
+            "detail": "Bumps Info.plist, builds .app, zips with ditto, tags+pushes, creates GitHub release. Prompts for version.",
+            "type": "shell",
+            "command": "./scripts/release.sh",
+            "args": ["${input:releaseVersion}"],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            }
+        }
+    ],
+    "inputs": [
+        {
+            "id": "releaseVersion",
+            "type": "promptString",
+            "description": "Release version (e.g. v0.1.0)"
         }
     ]
 }

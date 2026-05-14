@@ -8,3 +8,6 @@ Packages/
 
 # Built bundle
 GH Notifier.app/
+
+# Release artifacts
+/GH-Notifier-v*.zip

@@ -54,7 +54,7 @@ PB=/usr/libexec/PlistBuddy
 "$PB" -c "Set :CFBundleShortVersionString $VNUM" Resources/Info.plist
 "$PB" -c "Set :CFBundleVersion $VNUM"            Resources/Info.plist
 git add Resources/Info.plist
-git commit -m "chore: bump version to $VERSION"
+git commit -s -m "chore: bump version to $VERSION"
 
 # ---------- build ----------
 # Universal binary for distribution so Intel Macs can run the release zip too.

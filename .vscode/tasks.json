@@ -1,0 +1,144 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "swift: build (debug)",
+            "type": "shell",
+            "command": "swift",
+            "args": ["build"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$swiftc"],
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "swift: build (release)",
+            "type": "shell",
+            "command": "swift",
+            "args": ["build", "-c", "release"],
+            "group": "build",
+            "problemMatcher": ["$swiftc"],
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "swift: test",
+            "type": "shell",
+            "command": "swift",
+            "args": ["test"],
+            "group": "test",
+            "problemMatcher": ["$swiftc"]
+        },
+        {
+            "label": "app: build bundle",
+            "detail": "Run ./build-app.sh to produce GH Notifier.app in the repo root.",
+            "type": "shell",
+            "command": "./build-app.sh",
+            "problemMatcher": ["$swiftc"],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "app: build & install to /Applications",
+            "detail": "Run ./build-app.sh --install — installs and ad-hoc signs the menu bar app.",
+            "type": "shell",
+            "command": "./build-app.sh",
+            "args": ["--install"],
+            "problemMatcher": ["$swiftc"],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "app: launch installed",
+            "detail": "open -a 'GH Notifier' — assumes you have already installed it.",
+            "type": "shell",
+            "command": "open",
+            "args": ["-a", "GH Notifier"],
+            "problemMatcher": []
+        },
+        {
+            "label": "app: kill running",
+            "detail": "Kill GHNotifier if it's running; no-op if it isn't. Safe to chain.",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "killall GHNotifier 2>/dev/null; true"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "app: rebuild & relaunch",
+            "detail": "Common dev cycle in one click: kill the running app, rebuild+install, relaunch.",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "app: kill running",
+                "app: build & install to /Applications",
+                "app: launch installed"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "app: reset state",
+            "detail": "Kill running app, wipe UserDefaults (seenIds, lastSync), flush cfprefsd. Next launch behaves like first run.",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "killall GHNotifier 2>/dev/null; defaults delete com.eronwright.ghnotifier 2>/dev/null; killall cfprefsd 2>/dev/null; echo App state cleared."
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "app: reset state & relaunch",
+            "detail": "Reset state, then re-open the installed app.",
+            "dependsOrder": "sequence",
+            "dependsOn": ["app: reset state", "app: launch installed"],
+            "problemMatcher": []
+        },
+        {
+            "label": "app: re-register with LaunchServices",
+            "detail": "Unregister and re-register the installed .app so macOS treats it as a fresh install. Useful when banners stop arriving after ad-hoc resign.",
+            "type": "shell",
+            "command": "./scripts/re-register-app.sh",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
+            "label": "app: open System Settings (Notifications)",
+            "detail": "Jumps to System Settings → Notifications so you can enable banners for GH Notifier.",
+            "type": "shell",
+            "command": "open",
+            "args": ["x-apple.systempreferences:com.apple.preference.notifications"],
+            "problemMatcher": []
+        }
+    ]
+}

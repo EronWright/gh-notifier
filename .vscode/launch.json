@@ -1,0 +1,32 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "name": "Debug GHNotifier (debug build)",
+            "program": "${workspaceFolder}/.build/debug/GHNotifier",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "swift: build (debug)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "name": "Run GHNotifier (release build)",
+            "program": "${workspaceFolder}/.build/release/GHNotifier",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "swift: build (release)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "name": "Debug installed .app",
+            "program": "/Applications/GH Notifier.app/Contents/MacOS/GHNotifier",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "app: build & install to /Applications"
+        }
+    ]
+}

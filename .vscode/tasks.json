@@ -141,6 +141,18 @@
             "problemMatcher": []
         },
         {
+            "label": "icon: regenerate AppIcon.icns",
+            "detail": "Render the app icon (bell.badge.fill on deep purple) and compile Resources/AppIcon.icns. Edit scripts/make-icon.sh to tweak colors/size.",
+            "type": "shell",
+            "command": "./scripts/make-icon.sh",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            }
+        },
+        {
             "label": "release: cut new release",
             "detail": "Bumps Info.plist, builds .app, zips with ditto, tags+pushes, creates GitHub release. Prompts for version.",
             "type": "shell",

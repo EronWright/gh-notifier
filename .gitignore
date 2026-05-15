@@ -11,3 +11,6 @@ GH Notifier.app/
 
 # Release artifacts
 /GH-Notifier-v*.zip
+
+# Icon-generation intermediates (the final .icns lives in Resources/)
+/build/

@@ -72,7 +72,7 @@ enum AppConfig {
             emoji: "💬",
             symbolName: "text.bubble.fill",
             tintColor: .systemBlue,
-            reasons: ["author", "comment"],
+            reasons: ["author", "comment", "state_change"],
             cap: 10,
             overflowQuery: "is:unread reason:author"
         )

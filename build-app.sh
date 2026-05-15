@@ -68,8 +68,7 @@ if $UNIVERSAL; then
     lipo -archs "${BUNDLE_DIR}/Contents/MacOS/${EXEC_NAME}" | sed 's/^/    /'
 fi
 
-# Sign with a stable self-signed cert so usernoted can cache the icon consistently.
-# Create once with: scripts/create-signing-cert.sh
+# Sign with a stable self-signed cert so usernoted caches the icon consistently.
 # Falls back to ad-hoc if the cert is absent (other machines, CI).
 SIGN_ID="GH Notifier Code Signing"
 if command -v codesign >/dev/null 2>&1; then

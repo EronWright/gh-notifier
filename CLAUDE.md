@@ -24,7 +24,7 @@ GH Notifier is a macOS menu bar app (Swift, SwiftPM, macOS 12+) that polls GitHu
 open -a "GH Notifier"
 ```
 
-The build script assembles the `.app` bundle (required for Notification Center delivery) and applies ad-hoc codesigning.
+The build script assembles the `.app` bundle (required for Notification Center delivery) and codesigns it with the "GH Notifier Code Signing" identity from the login keychain (falls back to ad-hoc on machines without it).
 
 ## Testing
 
@@ -77,5 +77,6 @@ All tuning lives in `AppConfig.swift`. Edit and rebuild/reinstall:
 
 ## Utilities
 
-- `scripts/re-register-app.sh` — nudges LaunchServices to re-discover the app; use when ad-hoc re-signing confuses Notification Center permissions
+- `scripts/re-register-app.sh` — nudges LaunchServices to re-discover the app; rarely needed since switching to a stable signing cert
+- `scripts/make-icon.sh` — renders `Resources/AppIcon.icns` from scratch (Swift + AppKit, SF Symbols); re-run to tweak colors/size
 - `.vscode/tasks.json` — 14 VS Code tasks covering build, kill, relaunch, reset state, re-register, open System Settings, and release

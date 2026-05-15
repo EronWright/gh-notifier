@@ -1,4 +1,5 @@
 import AppKit
+import ServiceManagement
 import SwiftUI
 
 final class SettingsWindowController: NSWindowController {
@@ -39,6 +40,7 @@ private struct SettingsView: View {
     @AppStorage(UserSettings.pollIntervalKey) private var pollInterval: Double = 15 * 60
     @AppStorage(UserSettings.bannerCapKey)    private var bannerCap: Int = 5
     @AppStorage(UserSettings.maxPagesKey)     private var maxPages: Int = 5
+    @State private var launchAtLogin: Bool = false
 
     private let pollChoices: [PollOption] = [
         PollOption(label: "5 minutes",  seconds: 5  * 60),
@@ -91,9 +93,37 @@ private struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
             }
+
+            if #available(macOS 13, *) {
+                Divider()
+
+                HStack(spacing: 8) {
+                    Text("")
+                        .frame(width: 100)
+                    Toggle("Launch at login", isOn: $launchAtLogin)
+                        .onChange(of: launchAtLogin, perform: { enabled in
+                            do {
+                                if enabled {
+                                    try SMAppService.mainApp.register()
+                                } else {
+                                    try SMAppService.mainApp.unregister()
+                                }
+                            } catch {
+                                launchAtLogin = !enabled
+                                NSLog("Launch at login: \(error.localizedDescription)")
+                            }
+                        })
+                }
+            }
         }
         .padding(24)
         .frame(width: 340)
+        .onAppear {
+            if #available(macOS 13, *) {
+                let s = SMAppService.mainApp.status
+                launchAtLogin = s == .enabled || s == .requiresApproval
+            }
+        }
     }
 
     @ViewBuilder

@@ -88,7 +88,7 @@ open "./GH Notifier.app"
 
 ## Start at login
 
-Drag `GH Notifier.app` into **System Settings → General → Login Items** under "Open at Login".
+Toggle **Launch at login** in **Settings…** (⌘,). On macOS 12, drag `GH Notifier.app` into **System Settings → General → Login Items** instead.
 
 ## Configuration
 
@@ -101,6 +101,7 @@ Open **Settings…** (⌘,) from the menu bar dropdown to adjust the runtime-con
 | Poll interval | 15 minutes | How often the app checks for new notifications. Options: 5 min – 24 hours. |
 | Banner cap | 5 per poll | Max Notification Center banners fired per poll. Items beyond the cap still appear in the dropdown silently. Prevents the "you've been away" toast storm. |
 | Max pages | 5 per poll | Pages of 50 notifications fetched per poll (upper bound: 250 items, ~5 API calls). |
+| Launch at login | off | Register GH Notifier as a login item so it starts automatically on login (macOS 13+). |
 
 Settings are persisted in `UserDefaults` under `com.eronwright.gh-notifier` and take effect immediately (poll interval reschedules the timer on change).
 

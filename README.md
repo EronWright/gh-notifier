@@ -2,6 +2,8 @@
 
 A tiny macOS menu bar app that watches your GitHub notifications via the `gh` CLI.
 
+[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-db61a2?logo=github)](https://github.com/sponsors/EronWright)
+
 <img width="533" height="167" alt="image" src="https://github.com/user-attachments/assets/aa75e7ec-fd6e-4d9e-96ae-ff036e6ca64d" />
 
 <img width="900" height="230" alt="image" src="https://github.com/user-attachments/assets/bc8c07f8-b641-4233-b461-b72d1b6c34e0" />

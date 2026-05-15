@@ -71,6 +71,7 @@ ditto -c -k --keepParent "GH Notifier.app" "$ZIP_NAME"
 # ---------- tag & push ----------
 echo "==> Tagging $VERSION and pushing"
 git tag -a "$VERSION" -m "$VERSION"
+git pull --rebase origin main
 git push origin main "$VERSION"
 
 # ---------- release ----------

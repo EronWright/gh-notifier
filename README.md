@@ -2,6 +2,11 @@
 
 A tiny macOS menu bar app that watches your GitHub notifications via the `gh` CLI.
 
+<img width="533" height="167" alt="image" src="https://github.com/user-attachments/assets/aa75e7ec-fd6e-4d9e-96ae-ff036e6ca64d" />
+
+<img width="900" height="230" alt="image" src="https://github.com/user-attachments/assets/bc8c07f8-b641-4233-b461-b72d1b6c34e0" />
+
+
 ## What it surfaces
 
 It polls every 15 minutes (and on demand via "Refresh Now") and pulls your full unread notifications inbox, filtered to the reasons that actually matter day-to-day:

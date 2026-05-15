@@ -92,7 +92,7 @@ enum AppConfig {
 
     /// Bundle id used when posting Notification Center alerts.
     /// This must match CFBundleIdentifier in Info.plist for native delivery.
-    static let bundleIdentifier: String = "io.github.eronwright.ghnotifier"
+    static let bundleIdentifier: String = "com.eronwright.gh-notifier"
 
     /// UserDefaults keys.
     static let seenIdsKey  = "ghnotifier.seenIds.v1"

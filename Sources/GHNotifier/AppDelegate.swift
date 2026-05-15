@@ -25,16 +25,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             UserDefaults.standard.set(newValue, forKey: AppConfig.lastSyncKey)
         }
     }
-    /// Notification ids we've already posted a banner for, so we don't double-notify.
+    /// Ids in the unread inbox we've already handled this session — either
+    /// banner'd, or skipped past the per-poll cap. After each poll this is
+    /// rewritten to match the current unread set, so a thread that leaves
+    /// the inbox (read/done) and later re-enters (new comment on the same
+    /// PR/issue, which reuses the same thread id) banners again.
     private var seenIds: Set<String> {
         get {
             let arr = UserDefaults.standard.stringArray(forKey: AppConfig.seenIdsKey) ?? []
             return Set(arr)
         }
         set {
-            // Cap at a few thousand so the prefs file doesn't grow forever.
-            let trimmed = Array(newValue).suffix(2000)
-            UserDefaults.standard.set(Array(trimmed), forKey: AppConfig.seenIdsKey)
+            UserDefaults.standard.set(Array(newValue), forKey: AppConfig.seenIdsKey)
         }
     }
 
@@ -377,13 +379,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // backlog doesn't flood Notification Center. Items beyond the cap
         // still appear in the dropdown; they're just marked seen so they
         // don't queue up as banner candidates forever.
-        var seen = seenIds
-        let unseen = sorted.filter { !seen.contains($0.id) }
+        //
+        // Rewrite seenIds to match the current unread inbox: a thread that
+        // re-enters the inbox after being read (e.g. a new comment on a PR
+        // we already cleared) will then be treated as unseen again and
+        // banner. GitHub reuses thread ids for the lifetime of a PR/issue,
+        // so without this prune we'd silently swallow every follow-up.
+        let unseen = sorted.filter { !seenIds.contains($0.id) }
         for n in unseen.prefix(UserSettings.bannerCapPerPoll) {
             poster.post(n)
         }
-        for n in unseen { seen.insert(n.id) }
-        seenIds = seen
+        seenIds = Set(sorted.map { $0.id })
 
         current = sorted
         updateBadge()

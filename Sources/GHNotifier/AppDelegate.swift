@@ -12,6 +12,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     /// Notifications currently shown in the dropdown.
     private var current: [GitHubNotification] = []
+    /// The poll interval the running timer was created with; used to detect changes.
+    private var scheduledPollInterval: TimeInterval = 0
     /// Most recent error from a failed poll, surfaced in the menu.
     private var lastError: String?
     /// Last successful sync time, for the "since" param and menu label.
@@ -51,6 +53,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         poster.onAuthorizationChange = { [weak self] in
             self?.rebuildMenu()
         }
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(userDefaultsDidChange),
+            name: UserDefaults.didChangeNotification,
+            object: nil
+        )
         setupStatusItem()
         scheduleTimer()
         Task { await self.refresh() }
@@ -166,6 +174,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(openAll)
 
         menu.addItem(.separator())
+
+        let settings = NSMenuItem(title: "Settings…",
+                                  action: #selector(openSettings),
+                                  keyEquivalent: ",")
+        settings.target = self
+        menu.addItem(settings)
 
         let quit = NSMenuItem(title: "Quit GH Notifier",
                               action: #selector(NSApplication.terminate(_:)),
@@ -309,13 +323,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: - Polling
 
     private func scheduleTimer() {
+        let interval = UserSettings.pollInterval
         timer?.invalidate()
-        let t = Timer.scheduledTimer(withTimeInterval: AppConfig.pollInterval, repeats: true) { [weak self] _ in
+        let t = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             Task { await self?.refresh() }
         }
         // Allow firing while menus are open.
         RunLoop.main.add(t, forMode: .common)
         timer = t
+        scheduledPollInterval = interval
+    }
+
+    @objc private func userDefaultsDidChange() {
+        let desired = UserSettings.pollInterval
+        guard desired != scheduledPollInterval else { return }
+        scheduleTimer()
     }
 
     @objc private func manualRefresh() {
@@ -357,7 +379,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // don't queue up as banner candidates forever.
         var seen = seenIds
         let unseen = sorted.filter { !seen.contains($0.id) }
-        for n in unseen.prefix(AppConfig.bannerCapPerPoll) {
+        for n in unseen.prefix(UserSettings.bannerCapPerPoll) {
             poster.post(n)
         }
         for n in unseen { seen.insert(n.id) }
@@ -437,6 +459,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
               let url = URL(string: "https://github.com/notifications?query=\(encoded)")
         else { return }
         NSWorkspace.shared.open(url)
+    }
+
+    @objc private func openSettings() {
+        SettingsWindowController.shared.show()
     }
 
     @MainActor

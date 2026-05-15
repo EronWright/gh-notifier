@@ -20,11 +20,8 @@ enum FetcherError: LocalizedError {
 /// Wraps `gh api notifications` and filters to the reasons we care about.
 final class NotificationFetcher {
 
-    /// How many pages we'll walk per poll. With per_page=50 the upper bound
-    /// is 250 raw items per poll (~5 API calls, ~1–2.5s wall clock). The cap
-    /// keeps a runaway backlog from melting through 50+ calls every 15 min.
-    private static let maxPages = 5
-    private static let perPage  = 50
+    private static let perPage = 50
+    private static var maxPages: Int { UserSettings.maxPages }
 
     /// Fetches the user's complete unread notification inbox, paginating up
     /// to `maxPages` pages. We deliberately do *not* pass `since`: every poll

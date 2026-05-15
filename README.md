@@ -92,12 +92,24 @@ Drag `GH Notifier.app` into **System Settings → General → Login Items** unde
 
 ## Configuration
 
-All knobs live in [`Sources/GHNotifier/AppConfig.swift`](Sources/GHNotifier/AppConfig.swift):
+### Settings dialog
+
+Open **Settings…** (⌘,) from the menu bar dropdown to adjust the runtime-configurable options:
+
+| Setting | Default | Notes |
+|---------|---------|-------|
+| Poll interval | 15 minutes | How often the app checks for new notifications. Options: 5 min – 24 hours. |
+| Banner cap | 5 per poll | Max Notification Center banners fired per poll. Items beyond the cap still appear in the dropdown silently. Prevents the "you've been away" toast storm. |
+| Max pages | 5 per poll | Pages of 50 notifications fetched per poll (upper bound: 250 items, ~5 API calls). |
+
+Settings are persisted in `UserDefaults` under `com.eronwright.gh-notifier` and take effect immediately (poll interval reschedules the timer on change).
+
+### Advanced (source edit)
+
+Structural settings not exposed in the UI live in [`Sources/GHNotifier/AppConfig.swift`](Sources/GHNotifier/AppConfig.swift):
 
 | Setting              | Default                          | Notes                                                                 |
 |----------------------|----------------------------------|-----------------------------------------------------------------------|
-| `pollInterval`       | `15 * 60`                        | Seconds between polls.                                                |
-| `bannerCapPerPoll`   | `5`                              | Max banners fired per poll. Items beyond the cap still show in the dropdown; they're just silent. Prevents the "you've been away" toast storm. |
 | `menuGroups`         | `[Assigned 🎯, Review requested 👀, Mentioned ✋, Participating 💬]` | Ordered dropdown sections, named and emoji-iconed to match GitHub's filter sidebar. Each carries its own `reasons`, `cap` (rows shown before overflow), and `overflowQuery` (passed to `github.com/notifications?query=`). Reasons not in any group are dropped entirely. |
 | `bundleIdentifier`   | `com.eronwright.gh-notifier`     | Must match `CFBundleIdentifier` in `Resources/Info.plist`.            |
 

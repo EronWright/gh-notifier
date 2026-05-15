@@ -68,11 +68,18 @@ if $UNIVERSAL; then
     lipo -archs "${BUNDLE_DIR}/Contents/MacOS/${EXEC_NAME}" | sed 's/^/    /'
 fi
 
-# Ad-hoc sign so notifications and login-item entitlements work locally.
-# (No paid developer ID required for personal use.)
+# Sign with a stable self-signed cert so usernoted can cache the icon consistently.
+# Create once with: scripts/create-signing-cert.sh
+# Falls back to ad-hoc if the cert is absent (other machines, CI).
+SIGN_ID="GH Notifier Code Signing"
 if command -v codesign >/dev/null 2>&1; then
-    echo "==> codesign --force --deep --sign -"
-    codesign --force --deep --sign - "${BUNDLE_DIR}" >/dev/null
+    if security find-identity -v -p codesigning 2>/dev/null | grep -qF "$SIGN_ID"; then
+        echo "==> codesign --force --deep --sign \"$SIGN_ID\""
+        codesign --force --deep --sign "$SIGN_ID" "${BUNDLE_DIR}" >/dev/null
+    else
+        echo "==> codesign --force --deep --sign - (ad-hoc fallback)"
+        codesign --force --deep --sign - "${BUNDLE_DIR}" >/dev/null
+    fi
 fi
 
 echo

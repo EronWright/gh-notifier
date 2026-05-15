@@ -104,7 +104,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "killall GHNotifier 2>/dev/null; defaults delete com.eronwright.ghnotifier 2>/dev/null; killall cfprefsd 2>/dev/null; echo App state cleared."
+                "killall GHNotifier 2>/dev/null; defaults delete io.github.eronwright.ghnotifier 2>/dev/null; killall cfprefsd 2>/dev/null; echo App state cleared."
             ],
             "problemMatcher": [],
             "presentation": {

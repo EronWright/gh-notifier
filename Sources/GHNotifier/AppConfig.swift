@@ -72,7 +72,9 @@ enum AppConfig {
             emoji: "💬",
             symbolName: "text.bubble.fill",
             tintColor: .systemBlue,
-            reasons: ["author", "comment", "state_change"],
+            // `manual` = you clicked Subscribe on the thread. Treated as
+            // participation since you opted in deliberately.
+            reasons: ["author", "comment", "state_change", "manual"],
             cap: 10,
             overflowQuery: "is:unread reason:author"
         )

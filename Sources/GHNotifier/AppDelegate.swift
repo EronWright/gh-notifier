@@ -192,12 +192,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// Adds a paired primary + ⌥-alternate row for a single notification,
     /// tinted with the icon of its parent group.
     private func addNotificationItems(for n: GitHubNotification, in group: ReasonGroup) {
-        // owner/repo #1234 — Subject title  (or @abc1234 for commits)
+        // owner/repo #1234 · Event — Subject title  (or @abc1234 for commits)
+        // The event tag distinguishes a review from a comment from a PR open
+        // when several land in the same reason group (esp. Participating).
         let ref = n.subjectIdentifierLabel
         let repoRef = ref.isEmpty
             ? n.repository.fullName
             : "\(n.repository.fullName) \(ref)"
-        let title = "\(repoRef) — \(n.subject.title)"
+        let title = "\(repoRef) · \(n.eventLabel) — \(n.subject.title)"
 
         let primary = NSMenuItem(title: title,
                                  action: #selector(openNotification(_:)),

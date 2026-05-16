@@ -1,0 +1,6 @@
+{
+    // The Swift extension otherwise re-appends auto-generated launch entries
+    // (target+configuration style) every time the project loads, duplicating
+    // the hand-rolled program-path configurations in launch.json.
+    "swift.autoGenerateLaunchConfigurations": false
+}

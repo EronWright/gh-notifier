@@ -10,7 +10,7 @@ enum AppConfig {
     /// against the "you've been away" / "first run" notification storm.
     /// All un-bannered items still appear in the dropdown; they just don't
     /// get a system toast.
-    static let bannerCapPerPoll: Int = 5
+    static let bannerCapPerPoll: Int = 15
 
     /// Hard ceiling on rows the dropdown renders before collapsing the rest
     /// into a single "→ N more on GitHub" link. The menu stays navigable on

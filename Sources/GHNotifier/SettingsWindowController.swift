@@ -38,7 +38,7 @@ private struct PollOption {
 
 private struct SettingsView: View {
     @AppStorage(UserSettings.pollIntervalKey) private var pollInterval: Double = 15 * 60
-    @AppStorage(UserSettings.bannerCapKey)    private var bannerCap: Int = 5
+    @AppStorage(UserSettings.bannerCapKey)    private var bannerCap: Int = 15
     @AppStorage(UserSettings.maxPagesKey)     private var maxPages: Int = 5
     @State private var launchAtLogin: Bool = false
 

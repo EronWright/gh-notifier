@@ -17,7 +17,7 @@ enum UserSettings {
 
     static var bannerCapPerPoll: Int {
         get {
-            guard UserDefaults.standard.object(forKey: bannerCapKey) != nil else { return 5 }
+            guard UserDefaults.standard.object(forKey: bannerCapKey) != nil else { return 15 }
             return UserDefaults.standard.integer(forKey: bannerCapKey)
         }
         set { UserDefaults.standard.set(newValue, forKey: bannerCapKey) }

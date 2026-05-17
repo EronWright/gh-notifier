@@ -69,63 +69,33 @@ struct GitHubNotification: Codable, Hashable {
         }
     }
 
-    /// What actually happened on this thread.
+    /// GH's own per-thread classification, formatted for display.
     ///
-    /// `reason` is split into two kinds: ones that describe the event
-    /// directly (state_change, review_requested, assign) and ones that
-    /// describe your *relationship* to the thread (author, comment,
-    /// manual, subscribed) and tell us nothing about the latest activity.
-    /// For the relationship kinds we fall through to `latest_comment_url`
-    /// to guess what triggered the notification — its path distinguishes
-    /// a review from a review comment from a conversation comment.
+    /// We deliberately do *not* try to infer the trigger event here —
+    /// the public REST notifications API doesn't carry event data, and
+    /// every heuristic we tried (`latest_comment_url` path, cache-and-
+    /// diff against prior polls) introduced its own failure modes. So
+    /// the label simply mirrors GH's reason vocabulary — the same words
+    /// you see next to each row on github.com/notifications. The icon
+    /// keys off the same reason so the two signals always agree.
     ///
-    /// We deliberately *don't* trust the URL path for state_change /
-    /// review_requested / etc: `latest_comment_url` reflects the latest
-    /// comment that exists on the thread, not necessarily the latest
-    /// activity, so a stale comment URL would otherwise mislabel a merge
-    /// as a "Comment".
+    /// Full table of `reason` values + descriptions:
+    /// https://docs.github.com/en/rest/activity/notifications?apiVersion=2026-03-10#about-notification-reasons
     var eventLabel: String {
         switch reason {
-        case "review_requested":
-            return "Review requested"
-        case "assign":
-            return subject.type == "PullRequest" ? "PR assigned" : "Issue assigned"
-        case "state_change":
-            return subject.type == "PullRequest" ? "PR state changed" : "Issue state changed"
-        case "mention", "team_mention":
-            if let kind = latestCommentKind {
-                return "Mention in \(kind)"
-            }
-            return "Mentioned"
-        case "author", "comment", "manual", "subscribed":
-            if let kind = latestCommentKind {
-                return kind.prefix(1).uppercased() + kind.dropFirst()
-            }
-            switch subject.type {
-            case "PullRequest": return "PR update"
-            case "Issue":       return "Issue update"
-            case "Commit":      return "Commit"
-            case "Release":     return "Release"
-            case "Discussion":  return "Discussion"
-            default:            return subject.type
-            }
-        case "ci_activity":
-            return "CI activity"
-        case "push":
-            return "New commits"
+        case "assign":            return "Assigned"
+        case "review_requested":  return "Review requested"
+        case "mention":           return "Mention"
+        case "team_mention":      return "Team mention"
+        case "state_change":      return "State change"
+        case "author":            return "Author"
+        case "comment":           return "Commented"
+        case "manual":            return "Manual"
+        case "subscribed":        return "Subscribed"
+        case "ci_activity":       return "CI activity"
+        case "push":              return "New commits"
         default:
             return reason.replacingOccurrences(of: "_", with: " ").capitalized
         }
-    }
-
-    /// Lowercase noun for the kind of comment in `latest_comment_url`,
-    /// or nil when there's no fresh comment. Used by both `eventLabel`
-    /// (for sentence-style "Mention in review") and the click anchor.
-    private var latestCommentKind: String? {
-        guard let url = subject.latestCommentUrl, url != subject.url else { return nil }
-        if url.contains("/pulls/") && url.contains("/reviews/") { return "review" }
-        if url.contains("/pulls/comments/") { return "review comment" }
-        if url.contains("/issues/comments/") { return "comment" }
-        return nil
     }
 }

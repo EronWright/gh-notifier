@@ -23,18 +23,14 @@ final class NotificationFetcher {
     private static let perPage = 50
     private static var maxPages: Int { UserSettings.maxPages }
 
-    /// Fetches the user's complete unread notification inbox, paginating up
-    /// to `maxPages` pages. We deliberately do *not* pass `since`: every poll
-    /// returns the full set of currently-unread items so the dropdown mirrors
-    /// github.com/notifications. Banner-posting de-dupe is handled separately
-    /// by AppDelegate's `seenIds`.
-    ///
-    /// We deliberately do NOT pass `participating=true` either. The docs say
-    /// it returns notifications where you're "directly participating or
-    /// mentioned", but the mapping from that phrase to specific `reason`
-    /// values isn't enumerated — there's a real risk `team_mention` (or even
-    /// `mention`) gets dropped. Cheaper-safer to filter the page client-side
-    /// against `AppConfig.allowedReasons`.
+    /// Fetches the user's complete unread inbox, paginating up to
+    /// `maxPages`. We pass `participating=true` so GH's notion of
+    /// "Participating" (everything except whole-repo Watching) is the
+    /// authoritative filter — that keeps the app's vocabulary aligned
+    /// with the GH docs and the GH web UI. No `since` param: every
+    /// poll returns the full currently-unread set so the dropdown
+    /// mirrors github.com/notifications; banner de-dupe lives in
+    /// AppDelegate's `seenIds`.
     func fetch() async throws -> [GitHubNotification] {
         let ghPath = try Self.findGhPath()
         var accumulator: [GitHubNotification] = []
@@ -42,6 +38,7 @@ final class NotificationFetcher {
         for page in 1...Self.maxPages {
             let args = ["api", "-X", "GET", "notifications",
                         "-f", "all=false",
+                        "-f", "participating=true",
                         "-f", "per_page=\(Self.perPage)",
                         "-f", "page=\(page)"]
 
@@ -58,9 +55,7 @@ final class NotificationFetcher {
             }
 
             if pageItems.isEmpty { break }
-            accumulator.append(contentsOf: pageItems.filter {
-                AppConfig.allowedReasons.contains($0.reason)
-            })
+            accumulator.append(contentsOf: pageItems)
             // A page that comes back shorter than `perPage` is the last page —
             // no need to ask for another.
             if pageItems.count < Self.perPage { break }

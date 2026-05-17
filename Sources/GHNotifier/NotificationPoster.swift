@@ -50,10 +50,8 @@ final class NotificationPoster: NSObject, UNUserNotificationCenterDelegate {
     func post(_ n: GitHubNotification) {
         let ref = n.subjectIdentifierLabel
         let repoRef = ref.isEmpty ? n.repository.fullName : "\(n.repository.fullName) \(ref)"
-        // No emoji prefix: the system already shows the app icon, and
-        // pairing 💬 with "Comment" just said the same thing twice.
-        // eventLabel names the event so the user can tell a comment from
-        // a review from a PR-state-change inside Participating.
+        // No emoji prefix: the system already shows the app icon.
+        // eventLabel mirrors GH's reason vocabulary.
         let title = "\(n.eventLabel) · \(repoRef)"
         let body  = n.subject.title
         let url   = n.htmlUrl

@@ -120,39 +120,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             item.isEnabled = false
             menu.addItem(item)
         } else {
-            // Render each configured group: section header, up to `cap` items
-            // (oldest first, since `current` is already sorted that way), then
-            // an overflow link if there are more we couldn't fit.
-            var firstGroup = true
-            for group in AppConfig.menuGroups {
-                let inGroup = current.filter { group.reasons.contains($0.reason) }
-                guard !inGroup.isEmpty else { continue }
+            // Flat, newest-first list. Each row carries an event-specific
+            // icon so the reason is readable at a glance.
+            let hint = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+            hint.attributedTitle = Self.menuHint("hold ⌥ to mark done")
+            hint.isEnabled = false
+            menu.addItem(hint)
 
-                if !firstGroup { menu.addItem(.separator()) }
-                firstGroup = false
-
-                let header = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-                header.attributedTitle = Self.sectionHeaderTitle(
-                    primary: "\(group.title.uppercased())  ·  \(inGroup.count)",
-                    trailing: "hold ⌥ to mark done"
-                )
-                header.isEnabled = false
-                menu.addItem(header)
-
-                for n in inGroup.prefix(group.cap) {
-                    addNotificationItems(for: n, in: group)
-                }
-
-                let overflow = inGroup.count - group.cap
-                if overflow > 0, let query = group.overflowQuery {
-                    let label = "→ \(overflow) more on GitHub"
-                    let item = NSMenuItem(title: label,
-                                          action: #selector(openOverflow(_:)),
-                                          keyEquivalent: "")
-                    item.target = self
-                    item.representedObject = query
-                    menu.addItem(item)
-                }
+            for n in current.prefix(AppConfig.menuItemCap) {
+                addNotificationItems(for: n)
+            }
+            let overflow = current.count - AppConfig.menuItemCap
+            if overflow > 0 {
+                let item = NSMenuItem(title: "→ \(overflow) more on GitHub",
+                                      action: #selector(openAllOnGitHub),
+                                      keyEquivalent: "")
+                item.target = self
+                menu.addItem(item)
             }
         }
 
@@ -189,17 +173,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(quit)
     }
 
-    /// Adds a paired primary + ⌥-alternate row for a single notification,
-    /// tinted with the icon of its parent group.
-    private func addNotificationItems(for n: GitHubNotification, in group: ReasonGroup) {
-        // owner/repo #1234 · Event — Subject title  (or @abc1234 for commits)
-        // The event tag distinguishes a review from a comment from a PR open
-        // when several land in the same reason group (esp. Participating).
+    /// Adds a paired primary + ⌥-alternate row for a single notification.
+    /// Row icon and label both follow the GH-reason vocabulary so the
+    /// two signals always agree.
+    private func addNotificationItems(for n: GitHubNotification) {
+        // owner/repo #1234 · Reason — Subject title  (or @abc1234 for commits)
         let ref = n.subjectIdentifierLabel
         let repoRef = ref.isEmpty
             ? n.repository.fullName
             : "\(n.repository.fullName) \(ref)"
         let title = "\(repoRef) · \(n.eventLabel) — \(n.subject.title)"
+        let style = Self.eventStyle(for: n)
 
         let primary = NSMenuItem(title: title,
                                  action: #selector(openNotification(_:)),
@@ -207,7 +191,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         primary.target = self
         primary.representedObject = n
         primary.keyEquivalentModifierMask = []
-        primary.image = Self.categoryImage(for: group)
+        primary.image = Self.eventImage(style: style)
         primary.toolTip = "Open in browser and mark as read. Hold ⌥ to mark as done instead."
         menu.addItem(primary)
 
@@ -226,11 +210,76 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(alt)
     }
 
-    /// Picks the leading-icon image for a group: emoji if it renders, SF
-    /// Symbol fallback otherwise.
-    private static func categoryImage(for group: ReasonGroup) -> NSImage? {
-        emojiImage(group.emoji)
-            ?? tintedSymbol(name: group.symbolName, color: group.tintColor)
+    /// Visual treatment for a row, derived from event type. The icon
+    /// ties the row to its category at a glance now that groups no
+    /// longer exist as section headers.
+    private struct EventStyle {
+        let emoji: String
+        let symbolName: String
+        let tint: NSColor
+    }
+
+    /// One icon per GH reason, matching the row's `eventLabel`. Subject
+    /// type drives only the fallback for reasons we don't have a
+    /// specific glyph for.
+    private static func eventStyle(for n: GitHubNotification) -> EventStyle {
+        switch n.reason {
+        case "assign":
+            return EventStyle(emoji: "🎯", symbolName: "target", tint: .systemRed)
+        case "review_requested":
+            return EventStyle(emoji: "👀", symbolName: "eye.fill", tint: .systemPurple)
+        case "mention", "team_mention":
+            return EventStyle(emoji: "✋", symbolName: "at", tint: .systemOrange)
+        case "state_change":
+            return EventStyle(emoji: "🔄", symbolName: "arrow.triangle.2.circlepath", tint: .systemGray)
+        case "author":
+            return EventStyle(emoji: "📝", symbolName: "pencil.line", tint: .systemBlue)
+        case "comment":
+            return EventStyle(emoji: "💬", symbolName: "text.bubble.fill", tint: .systemBlue)
+        case "manual":
+            return EventStyle(emoji: "🔔", symbolName: "bell.fill", tint: .systemBlue)
+        case "subscribed":
+            return EventStyle(emoji: "👁", symbolName: "eye.fill", tint: .systemGray)
+        case "ci_activity":
+            return EventStyle(emoji: "⚙️", symbolName: "gearshape.fill", tint: .systemGray)
+        case "push":
+            return EventStyle(emoji: "📦", symbolName: "shippingbox.fill", tint: .systemGray)
+        default:
+            break
+        }
+        // Unknown reasons: fall back to the subject type so something
+        // still renders for newly-introduced reasons we haven't mapped.
+        switch n.subject.type {
+        case "PullRequest":
+            return EventStyle(emoji: "🔀", symbolName: "arrow.triangle.pull", tint: .systemGreen)
+        case "Issue":
+            return EventStyle(emoji: "🐛", symbolName: "exclamationmark.circle.fill", tint: .systemGreen)
+        case "Commit":
+            return EventStyle(emoji: "📦", symbolName: "shippingbox.fill", tint: .systemGray)
+        case "Release":
+            return EventStyle(emoji: "🚀", symbolName: "tag.fill", tint: .systemGray)
+        case "Discussion":
+            return EventStyle(emoji: "💭", symbolName: "bubble.left.and.bubble.right.fill", tint: .systemTeal)
+        default:
+            return EventStyle(emoji: "📌", symbolName: "pin.fill", tint: .systemGray)
+        }
+    }
+
+    /// Renders the row's leading icon (emoji preferred; SF Symbol fallback
+    /// for the rare case emoji measurement fails).
+    private static func eventImage(style: EventStyle) -> NSImage? {
+        emojiImage(style.emoji)
+            ?? tintedSymbol(name: style.symbolName, color: style.tint)
+    }
+
+    /// Small, muted text used for the standalone hint row above the
+    /// notifications list (e.g. "hold ⌥ to mark done"). Matches the
+    /// trailing-text style the section headers used to carry.
+    private static func menuHint(_ text: String) -> NSAttributedString {
+        NSAttributedString(string: text, attributes: [
+            .font: NSFont.systemFont(ofSize: 11, weight: .regular),
+            .foregroundColor: NSColor.tertiaryLabelColor
+        ])
     }
 
     /// Renders an emoji string into an NSImage roughly the height of menu
@@ -247,39 +296,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         attrStr.draw(at: .zero)
         image.unlockFocus()
         return image
-    }
-
-    /// Builds the attributed title for a section header: bold uppercased
-    /// `primary` on the left, lighter `trailing` text right-aligned via a
-    /// right tab stop.
-    private static func sectionHeaderTitle(primary: String, trailing: String) -> NSAttributedString {
-        let paragraph = NSMutableParagraphStyle()
-        // Right-aligned tab at a wide-but-not-huge location. NSMenu will
-        // expand the menu to fit this tab stop, so the hint always sits
-        // flush-right inside a reasonably-wide dropdown.
-        paragraph.tabStops = [
-            NSTextTab(textAlignment: .right, location: 480, options: [:])
-        ]
-
-        let result = NSMutableAttributedString()
-        result.append(NSAttributedString(
-            string: primary,
-            attributes: [
-                .font: NSFont.systemFont(ofSize: 11, weight: .bold),
-                .foregroundColor: NSColor.secondaryLabelColor,
-                .kern: 0.5,
-                .paragraphStyle: paragraph
-            ]
-        ))
-        result.append(NSAttributedString(
-            string: "\t" + trailing,
-            attributes: [
-                .font: NSFont.systemFont(ofSize: 11, weight: .regular),
-                .foregroundColor: NSColor.tertiaryLabelColor,
-                .paragraphStyle: paragraph
-            ]
-        ))
-        return result
     }
 
     /// Returns a small, color-tinted SF Symbol image suitable for use as
@@ -373,9 +389,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         lastError = nil
         lastSync = Date()
 
-        // Oldest first, matching how GitHub's notifications inbox stacks them
-        // (most recently touched at the bottom).
-        let sorted = items.sorted { $0.updatedAt < $1.updatedAt }
+        // Newest first: the menu shows the freshest items at the top.
+        let sorted = items.sorted { $0.updatedAt > $1.updatedAt }
 
         // Banner at most AppConfig.bannerCapPerPoll items per poll so a big
         // backlog doesn't flood Notification Center. Items beyond the cap
@@ -387,8 +402,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // we already cleared) will then be treated as unseen again and
         // banner. GitHub reuses thread ids for the lifetime of a PR/issue,
         // so without this prune we'd silently swallow every follow-up.
+        //
+        // Post oldest-of-the-prefix first so Notification Center stacks the
+        // genuinely-newest item on top — the system orders banners by post
+        // time, last-posted-on-top.
         let unseen = sorted.filter { !seenIds.contains($0.id) }
-        for n in unseen.prefix(UserSettings.bannerCapPerPoll) {
+        for n in unseen.prefix(UserSettings.bannerCapPerPoll).reversed() {
             poster.post(n)
         }
         seenIds = Set(sorted.map { $0.id })
@@ -457,16 +476,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if let url = URL(string: "https://github.com/notifications") {
             NSWorkspace.shared.open(url)
         }
-    }
-
-    /// Opens github.com/notifications filtered to a particular query, e.g.
-    /// "is:unread reason:review-requested". Used by the per-group overflow rows.
-    @objc private func openOverflow(_ sender: NSMenuItem) {
-        guard let query = sender.representedObject as? String,
-              let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: "https://github.com/notifications?query=\(encoded)")
-        else { return }
-        NSWorkspace.shared.open(url)
     }
 
     @objc private func openSettings() {
